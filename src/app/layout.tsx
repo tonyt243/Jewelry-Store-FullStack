@@ -2,6 +2,8 @@
 import './globals.css'
 import { ReactNode } from 'react'
 import { Clock, Cart } from './components/scripts'
+import Footer from './components/footer'
+
 
 export const metadata = {
   title: 'My Jewelry Store',
@@ -37,7 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
         <main>{children}</main>
 
-        <footer>{/* footer content */}</footer>
+        <Footer />
       </body>
     </html>
   )

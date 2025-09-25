@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Carousel, FavoriteButton } from './components/scripts'
+import Head from './components/head'
 
 // Product type
 type Product = {
