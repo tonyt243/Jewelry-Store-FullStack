@@ -1,21 +1,20 @@
-# My Jewelry Store App
+# Jewelry Store Website
 
-## Getting Started
+This is a [Next.js](https://nextjs.org) project for a jewelry store. It showcases products like rings and necklaces, allows users to search, filter, add items to a cart, and mark favorites.
 
-First, run the development server:
+## Project Features
 
+- Product gallery with images, categories, and prices
+- Search and filter by product name or category
+- Add items to cart and manage favorites
+- Responsive design with basic animations
+- Header, footer, and dynamic components (Clock, Cart, FavoriteButton)
 
+### Getting Started
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+First, install dependencies and run the development server:
 
-Features
-
-Browse products by category
-
-Search products by name
-
-Add items to favorites
-
-Add items to cart
-
+```bash
+npm install
+npm run dev
 
