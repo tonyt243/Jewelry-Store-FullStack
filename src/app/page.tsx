@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import Carousel from '@/components/Carousel';
 
 export default function Home() {
@@ -15,6 +14,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-amber-50 to-white">
         <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          
           <h1 className="text-5xl md:text-6xl font-serif text-amber-900 mb-6">
             Welcome to Kim Thao Trang Jewelry
           </h1>
@@ -50,11 +50,10 @@ export default function Home() {
                 className="group"
               >
                 <div className="relative aspect-square rounded-lg overflow-hidden mb-4">
-                  <Image
+                  <img
                     src={category.image}
                     alt={category.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition duration-300"
+                    className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
                   />
                 </div>
                 <h3 className="text-xl font-serif text-center text-amber-900 mb-2">

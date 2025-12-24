@@ -7,49 +7,51 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-[#f5deb3] shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-30">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="text-2xl font-serif text-amber-900">
-              Kim Thao Trang Jewelry
-            </div>
+          <Link href="/" className="flex items-center space-x-3">
+            <img 
+              src="/images/logotest.png" 
+              alt="Kim Thao Trang Jewelry" 
+              className="h-30 object-contain"
+            />
           </Link>
 
           {/* Navigation Links */}
           <div className="hidden md:flex space-x-8 items-center">
             <Link 
               href="/" 
-              className="text-gray-700 hover:text-amber-900 transition font-medium relative group"
+              className="text-gray-800 hover:text-amber-900 transition font-medium relative group"
             >
               Home
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link 
               href="/products" 
-              className="text-gray-700 hover:text-amber-900 transition font-medium relative group"
+              className="text-gray-800 hover:text-amber-900 transition font-medium relative group"
             >
               Products
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link 
               href="/services" 
-              className="text-gray-700 hover:text-amber-900 transition font-medium relative group"
+              className="text-gray-800 hover:text-amber-900 transition font-medium relative group"
             >
               Services
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link 
               href="/contact" 
-              className="text-gray-700 hover:text-amber-900 transition font-medium relative group"
+              className="text-gray-800 hover:text-amber-900 transition font-medium relative group"
             >
               Contact
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link 
               href="/about" 
-              className="text-gray-700 hover:text-amber-900 transition font-medium relative group"
+              className="text-gray-800 hover:text-amber-900 transition font-medium relative group"
             >
               About Us
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
@@ -57,7 +59,7 @@ export default function Navbar() {
             {user && (
               <Link 
                 href="/favorites" 
-                className="text-gray-700 hover:text-amber-900 transition font-medium relative group"
+                className="text-gray-800 hover:text-amber-900 transition font-medium relative group"
               >
                 Favorites
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
@@ -69,7 +71,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
-                <span className="text-gray-700 font-medium">
+                <span className="text-gray-800 font-medium">
                   Welcome, {user.user_metadata?.name || 'User'}!
                 </span>
                 <button
