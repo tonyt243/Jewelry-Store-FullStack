@@ -4,10 +4,10 @@ import Carousel from '@/components/Carousel';
 
 export default function Home() {
   const categories = [
-    { name: 'Rings', image: '/image/rings.webp', link: '/products?category=rings' },
-    { name: 'Necklaces', image: '/image/necklaces.webp', link: '/products?category=necklaces' },
-    { name: 'Bracelets', image: '/image/bracelets.webp', link: '/products?category=bracelets' },
-    { name: 'Earrings', image: '/image/earrings.webp', link: '/products?category=earrings' },
+    { name: 'Rings', image: '/images/rings.webp', link: '/products?category=rings' },
+    { name: 'Necklaces', image: '/images/necklaces.webp', link: '/products?category=necklaces' },
+    { name: 'Bracelets', image: '/images/bracelets.webp', link: '/products?category=bracelets' },
+    { name: 'Earrings', image: '/images/earrings.webp', link: '/products?category=earrings' },
   ];
 
   return (
