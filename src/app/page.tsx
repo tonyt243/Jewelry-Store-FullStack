@@ -1,11 +1,13 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import Carousel from '@/components/Carousel';
 
 export default function Home() {
   const categories = [
-    { name: 'Rings', link: '/products?category=rings' },
-    { name: 'Necklaces', link: '/products?category=necklaces' },
-    { name: 'Bracelets', link: '/products?category=bracelets' },
-    { name: 'Earrings', link: '/products?category=earrings' },
+    { name: 'Rings', image: '/image/rings.webp', link: '/products?category=rings' },
+    { name: 'Necklaces', image: '/image/necklaces.webp', link: '/products?category=necklaces' },
+    { name: 'Bracelets', image: '/image/bracelets.webp', link: '/products?category=bracelets' },
+    { name: 'Earrings', image: '/image/earrings.webp', link: '/products?category=earrings' },
   ];
 
   return (
@@ -27,11 +29,9 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Carousel Placeholder */}
+        {/* Carousel */}
         <div className="max-w-6xl mx-auto px-4 pb-16">
-          <div className="bg-gray-200 rounded-lg aspect-[16/9] flex items-center justify-center">
-            <p className="text-gray-500 text-lg">Image Carousel (We'll add images next)</p>
-          </div>
+          <Carousel />
         </div>
       </section>
 
@@ -49,10 +49,13 @@ export default function Home() {
                 href={category.link}
                 className="group"
               >
-                <div className="relative aspect-square bg-amber-100 rounded-lg overflow-hidden mb-4 group-hover:bg-amber-200 transition flex items-center justify-center">
-                  <span className="text-amber-900 text-2xl font-serif">
-                    {category.name}
-                  </span>
+                <div className="relative aspect-square rounded-lg overflow-hidden mb-4">
+                  <Image
+                    src={category.image}
+                    alt={category.name}
+                    fill
+                    className="object-cover group-hover:scale-110 transition duration-300"
+                  />
                 </div>
                 <h3 className="text-xl font-serif text-center text-amber-900 mb-2">
                   {category.name}
