@@ -7,47 +7,7 @@ A modern, full-stack jewelry store website built with Next.js, featuring user au
 
 This is a complete redesign and upgrade of the Kim Thao Trang Jewelry store website, transforming it from a static HTML/CSS site into a dynamic full-stack application with user authentication and database integration.
 
-##  Features Implemented
-
-### Current Features (Completed)
-
--  **User Authentication System**
-  - User registration with email/password
-  - User login/logout functionality
-  - Protected routes for logged-in users
-  - Welcome message displaying user's name
-  - Session management with Supabase Auth
-
--  **Modern UI/UX**
-  - Responsive design using Tailwind CSS
-  - Animated navigation with hover effects (underline animations)
-  - Custom wheat/beige color scheme matching brand logo
-  - Professional logo integration in navbar
-  - Smooth transitions and button animations
-
--  **Homepage**
-  - Hero section with brand logo
-  - Auto-playing image carousel (4-second intervals)
-  - "Shop By Category" section (Rings, Necklaces, Bracelets, Earrings)
-  - Responsive layout for mobile and desktop
-
--  **Navigation**
-  - Sticky navbar with logo
-  - Dynamic menu (shows "Favorites" only when logged in)
-  - Animated hover effects on all links
-  - Login/Logout buttons with scale animations
-  - User greeting in navbar
-
--  **Database Setup (Supabase)**
-  - PostgreSQL database configured
-  - Tables created:
-    - `products` - Jewelry items (name, description, price, category, image)
-    - `favorites` - User's saved items
-    - `inquiries` - Customer contact messages
-  - Row Level Security (RLS) policies implemented
-  - User metadata storage for names
-
-## 🛠️ Tech Stack
+##  Tech Stack
 
 ### Frontend
 - **Framework**: Next.js 15 (App Router)
@@ -69,7 +29,7 @@ This is a complete redesign and upgrade of the Kim Thao Trang Jewelry store webs
 - **Code Editor**: VS Code (recommended)
 - **Node Version**: 18+ required
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 jewelry-store-fs/
@@ -94,7 +54,7 @@ jewelry-store-fs/
 └── tsconfig.json              # TypeScript configuration
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
