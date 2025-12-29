@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
-  title: "Kim Thao Trang Jewelry - Timeless Elegance",
+  title: "Kim Thao Trang Jewelry",
   description: "Discover our exclusive collection of rings, necklaces, bracelets & earrings. Located in Ho Chi Minh City, Vietnam.",
 };
 
