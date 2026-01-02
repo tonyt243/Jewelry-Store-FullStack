@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { ChevronDown } from 'lucide-react';
 
 type Product = {
   id: string;
@@ -13,16 +14,26 @@ type Product = {
   image_url: string;
 };
 
+type SortOption = 'none' | 'asc' | 'desc';
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<SortOption>('none');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const categories = ['all', 'rings', 'necklaces', 'bracelets', 'earrings'];
 
+  const sortOptions = [
+    { value: 'none', label: 'Default' },
+    { value: 'asc', label: 'Lowest Price' },
+    { value: 'desc', label: 'Highest Price' },
+  ];
+
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory]);
+  }, [selectedCategory, sortOrder]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -31,6 +42,13 @@ export default function ProductsPage() {
       
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory);
+      }
+
+      // Add sorting
+      if (sortOrder === 'asc') {
+        query = query.order('price', { ascending: true });
+      } else if (sortOrder === 'desc') {
+        query = query.order('price', { ascending: false });
       }
 
       const { data, error } = await query;
@@ -44,33 +62,82 @@ export default function ProductsPage() {
     }
   };
 
+  const handleSortChange = (value: SortOption) => {
+    setSortOrder(value);
+    setIsDropdownOpen(false);
+  };
+
+  const getCurrentSortLabel = () => {
+    return sortOptions.find(opt => opt.value === sortOrder)?.label || 'Default';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
       <div className="max-w-7xl mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-playfair text-amber-900 mb-4"
-            style={{ fontFamily: 'var(--font-playfair)' }}>
+          <h1 className="text-5xl font-serif text-amber-900 mb-4">
             Our Collection
           </h1>
+          <p className="text-xl text-gray-700">
+            Discover our exquisite jewelry pieces
+          </p>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex justify-center gap-4 mb-12 flex-wrap">
+        {/* Filter and Sort Controls */}
+        <div className="mb-12">
+          {/* Category Filter + Sort Dropdown in one row */}
+          <div className="flex justify-center gap-4 flex-wrap items-center">
             {categories.map((category) => (
-                <button
+              <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 style={{ fontFamily: 'var(--font-playfair)' }}
-                className={`px-8 py-3 rounded-lg font-playfair transition-all duration-300 transform hover:scale-105 shadow-md ${
-                    selectedCategory === category
-                        ? 'bg-amber-900 text-white shadow-lg scale-105'
-                        : 'bg-white text-amber-900 border-2 border-amber-900 hover:bg-amber-50'
-                    }`}
-                >
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                </button>
+                className={`px-8 py-3 rounded-lg font-semibold text-lg tracking-wide transition-all duration-300 transform hover:scale-105 shadow-md ${
+                  selectedCategory === category
+                    ? 'bg-amber-900 text-white shadow-lg scale-105'
+                    : 'bg-white text-amber-900 border-2 border-amber-900 hover:bg-amber-50'
+                }`}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </button>
             ))}
+
+            {/* Sort Dropdown - at the end */}
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                style={{ fontFamily: 'var(--font-playfair)' }}
+                className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-amber-900 text-amber-900 rounded-lg font-semibold text-lg hover:bg-amber-50 transition-all duration-300 transform hover:scale-105 shadow-md"
+              >
+                <span>Sort By: {getCurrentSortLabel()}</span>
+                <ChevronDown 
+                  className={`w-5 h-5 transition-transform duration-300 ${
+                    isDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute top-full mt-2 w-full bg-white border-2 border-amber-900 rounded-lg shadow-xl overflow-hidden z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleSortChange(option.value as SortOption)}
+                      className={`w-full px-6 py-3 text-left hover:bg-amber-50 transition-colors ${
+                        sortOrder === option.value
+                          ? 'bg-amber-900 text-white font-semibold'
+                          : 'text-amber-900'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Products Grid */}
