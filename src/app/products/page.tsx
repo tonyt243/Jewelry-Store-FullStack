@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Heart } from 'lucide-react';
 
 type Product = {
   id: string;
@@ -17,11 +18,13 @@ type Product = {
 type SortOption = 'none' | 'asc' | 'desc';
 
 export default function ProductsPage() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<SortOption>('none');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   const categories = ['all', 'rings', 'necklaces', 'bracelets', 'earrings'];
 
@@ -33,7 +36,10 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory, sortOrder]);
+    if (user) {
+      fetchFavorites();
+    }
+  }, [selectedCategory, sortOrder, user]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -44,7 +50,6 @@ export default function ProductsPage() {
         query = query.eq('category', selectedCategory);
       }
 
-      // Add sorting
       if (sortOrder === 'asc') {
         query = query.order('price', { ascending: true });
       } else if (sortOrder === 'desc') {
@@ -59,6 +64,62 @@ export default function ProductsPage() {
       console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('product_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const ids = new Set(data?.map(fav => fav.product_id) || []);
+      setFavoriteIds(ids);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (productId: string) => {
+    if (!user) {
+      alert('Please login to add favorites');
+      return;
+    }
+
+    try {
+      if (favoriteIds.has(productId)) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
+
+        if (error) throw error;
+
+        setFavoriteIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorites')
+          .insert({ user_id: user.id, product_id: productId });
+
+        if (error) throw error;
+
+        setFavoriteIds(prev => new Set([...prev, productId]));
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      alert('Failed to update favorites');
     }
   };
 
@@ -79,14 +140,10 @@ export default function ProductsPage() {
           <h1 className="text-5xl font-serif text-amber-900 mb-4">
             Our Collection
           </h1>
-          <p className="text-xl text-gray-700">
-            Discover our exquisite jewelry pieces
-          </p>
         </div>
 
         {/* Filter and Sort Controls */}
         <div className="mb-12">
-          {/* Category Filter + Sort Dropdown in one row */}
           <div className="flex justify-center gap-4 flex-wrap items-center">
             {categories.map((category) => (
               <button
@@ -103,7 +160,6 @@ export default function ProductsPage() {
               </button>
             ))}
 
-            {/* Sort Dropdown - at the end */}
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -118,7 +174,6 @@ export default function ProductsPage() {
                 />
               </button>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <div className="absolute top-full mt-2 w-full bg-white border-2 border-amber-900 rounded-lg shadow-xl overflow-hidden z-10 animate-in fade-in slide-in-from-top-2 duration-200">
                   {sortOptions.map((option) => (
@@ -154,8 +209,22 @@ export default function ProductsPage() {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group relative"
               >
+                {/* Favorite Heart Button */}
+                <button
+                  onClick={() => toggleFavorite(product.id)}
+                  className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg hover:scale-110 transition"
+                >
+                  <Heart
+                    className={`w-6 h-6 ${
+                      favoriteIds.has(product.id)
+                        ? 'fill-red-500 text-red-500'
+                        : 'text-gray-400'
+                    }`}
+                  />
+                </button>
+
                 {/* Product Image */}
                 <div className="relative aspect-square overflow-hidden">
                   <img
