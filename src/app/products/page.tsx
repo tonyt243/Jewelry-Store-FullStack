@@ -246,9 +246,12 @@ export default function ProductsPage() {
                     <span className="text-2xl font-bold text-amber-900">
                       ${product.price.toLocaleString()}
                     </span>
-                    <button className="bg-amber-900 text-white px-4 py-2 rounded-md hover:bg-amber-800 transition transform hover:scale-105">
-                      View Details
-                    </button>
+                    <Link 
+                      href={`/contact?product=${product.id}`}
+                      className="bg-amber-900 text-white px-4 py-2 rounded-md hover:bg-amber-800 transition transform hover:scale-105 inline-block text-center"
+                    >
+                      Inquire
+                    </Link>
                   </div>
                 </div>
               </div>

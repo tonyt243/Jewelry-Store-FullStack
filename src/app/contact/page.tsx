@@ -1,12 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string;
+};
+
 export default function ContactPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('product');
+  
+  const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.name || '',
     email: user?.email || '',
@@ -16,6 +28,34 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  // Fetch product if productId exists
+  useEffect(() => {
+    if (productId) {
+      fetchProduct(productId);
+    }
+  }, [productId]);
+
+  const fetchProduct = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, image_url')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setProduct(data);
+      
+      // Pre-fill message
+      setFormData(prev => ({
+        ...prev,
+        message: `Inquiries for: ${data.name} ($${data.price.toLocaleString()})\n\n`,
+      }));
+    } catch (err) {
+      console.error('Error fetching product:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,18 +72,20 @@ export default function ContactPage() {
           email: formData.email,
           phone: formData.phone || null,
           message: formData.message,
+          product_id: productId || null,
           status: 'new',
         });
 
       if (submitError) throw submitError;
 
       setSuccess(true);
-      // Clear form if not logged in
+      // Clear form
       if (!user) {
         setFormData({ name: '', email: '', phone: '', message: '' });
       } else {
         setFormData({ ...formData, phone: '', message: '' });
       }
+      setProduct(null);
     } catch (err: any) {
       setError(err.message || 'Failed to send message. Please try again.');
     } finally {
@@ -74,6 +116,24 @@ export default function ContactPage() {
             <h2 className="text-3xl font-serif text-amber-900 mb-6">
               Send us a message
             </h2>
+
+            {/* Product Preview */}
+            {product && (
+              <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-sm text-gray-600 mb-2">Inquiring about:</p>
+                <div className="flex items-center gap-4">
+                  <img 
+                    src={product.image_url} 
+                    alt={product.name}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <div>
+                    <h3 className="font-semibold text-amber-900">{product.name}</h3>
+                    <p className="text-gray-700">${product.price.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {success && (
               <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
@@ -211,21 +271,21 @@ export default function ContactPage() {
 
             {/* Google Map */}
             <div className="bg-white rounded-lg shadow-lg p-8">
-                <h3 className="text-2xl font-serif text-amber-900 mb-4">
-                    Visit Us
-                </h3>
-                <div className="aspect-video rounded-lg overflow-hidden">
-                    <iframe
-                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.500106761181!2d106.69439387540832!3d10.772956459257015!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f3f2b4c7449%3A0xfcd9d29863594a0b!2zMTg2IEzDqiBUaMOhbmggVMO0biwgUGjGsOG7nW5nIELhur9uIFRow6BuaCwgUXXhuq1uIDEsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCA3MDAwMCwgVmlldG5hbQ!5e0!3m2!1sen!2sus!4v1768109931496!5m2!1sen!2sus"
-                     width="100%"
-                     height="100%"
-                     style={{ border: 0 }}
-                     allowFullScreen
-                     loading="lazy"
-                     referrerPolicy="no-referrer-when-downgrade"
-                     className="w-full h-full"
-                    />
-                </div>
+              <h3 className="text-2xl font-serif text-amber-900 mb-4">
+                Visit Us
+              </h3>
+              <div className="aspect-video rounded-lg overflow-hidden">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.500106761181!2d106.69439387540832!3d10.772956459257015!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f3f2b4c7449%3A0xfcd9d29863594a0b!2zMTg2IEzDqiBUaMOhbmggVMO0biwgUGjGsOG7nW5nIELhur9uIFRow6BuaCwgUXXhuq1uIDEsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCA3MDAwMCwgVmlldG5hbQ!5e0!3m2!1sen!2sus!4v1768109931496!5m2!1sen!2sus"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full"
+                />
+              </div>
             </div>
           </div>
         </div>
