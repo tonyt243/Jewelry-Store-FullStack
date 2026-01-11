@@ -50,7 +50,7 @@ export default function ContactPage() {
       // Pre-fill message
       setFormData(prev => ({
         ...prev,
-        message: `Inquiries for: ${data.name} ($${data.price.toLocaleString()})\n\n`,
+        message: `Inquiry for: ${data.name} ($${data.price.toLocaleString()})\n\n`,
       }));
     } catch (err) {
       console.error('Error fetching product:', err);
