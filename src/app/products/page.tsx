@@ -175,7 +175,7 @@ export default function ProductsPage() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute top-full mt-2 w-full bg-white border-2 border-amber-900 rounded-lg shadow-xl overflow-hidden z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full mt-2 w-full bg-white border-2 border-amber-900 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   {sortOptions.map((option) => (
                     <button
                       key={option.value}
