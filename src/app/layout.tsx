@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import { Playfair_Display, Cormorant_Garamond } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 
 
 const playfair = Playfair_Display({ 
@@ -41,6 +42,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
