@@ -2,12 +2,37 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
+  const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    // Set initial time
+    setCurrentTime(new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }));
+
+    // Update time every second
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }));
+    }, 1000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <nav className="bg-[#f5deb3] shadow-md sticky top-0 z-50">
+    <nav className="bg-[#f5deb3] shadow-md sticky top-0 z-50 relative">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-45">
           {/* Left: Logo */}
@@ -93,6 +118,11 @@ export default function Navbar() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Clock */}
+      <div className="absolute top-2 right-4 text-gray-800 font-semibold text-bg font-mono bg-amber-100 px-3 py-1 rounded-md shadow-sm">
+        {currentTime}
       </div>
     </nav>
   );
