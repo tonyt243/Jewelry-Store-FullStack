@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
@@ -84,17 +84,28 @@ export default function Navbar() {
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
             </Link>
             {user && (
-              <Link 
-                href="/favorites" 
-                className="text-gray-800 hover:text-amber-900 transition font-medium text-lg relative group"
+              <>
+                <Link 
+                  href="/favorites" 
+                  className="text-gray-800 hover:text-amber-900 transition font-medium text-lg relative group"
               >
-                Favorites
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
-              </Link>
+                  Favorites
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
+                </Link>
+                {isAdmin && (
+                  <Link 
+                    href= "/admin" 
+                    className="text-gray-800 hover:text-amber-900 transition font-medium text-lg relative group"
+                  >
+                    Admin
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-amber-900 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                 )}
+              </>
             )}
           </div>
 
-          {/* Right: Auth Section */}
+          {/* Auth Section */}
           <div className="flex-1 flex items-center justify-end space-x-4">
             {user ? (
               <>
