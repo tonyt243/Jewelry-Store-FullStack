@@ -88,7 +88,7 @@ jewelry-store-fs/
 └── tsconfig.json              # TypeScript configuration
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
