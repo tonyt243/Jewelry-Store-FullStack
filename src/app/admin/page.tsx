@@ -25,14 +25,21 @@ type Inquiry = {
   created_at: string;
 };
 
+type UserProfile = {
+  email: string;
+  name: string;
+  inquiry_count: number;
+};
+
 export default function AdminDashboard() {
   const { user, loading: authLoading, isAdmin } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'inquiries'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'inquiries' | 'users'>('overview');
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -61,14 +68,30 @@ export default function AdminDashboard() {
       const { data: inquiriesData, error: inquiriesError } = await supabase
         .from('inquiries')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       if (inquiriesError) throw inquiriesError;
       setInquiries(inquiriesData || []);
 
-      // Fetch user count 
-      setUserCount(inquiriesData?.length || 0);
+      // Get unique users and count their inquiries
+      const uniqueUsers = new Map<string, UserProfile>();
+      inquiriesData?.forEach((inquiry) => {
+        if (inquiry.email) {
+          if (uniqueUsers.has(inquiry.email)) {
+            const user = uniqueUsers.get(inquiry.email)!;
+            user.inquiry_count += 1;
+          } else {
+            uniqueUsers.set(inquiry.email, {
+              email: inquiry.email,
+              name: inquiry.name,
+              inquiry_count: 1,
+            });
+          }
+        }
+      });
+
+      setUsers(Array.from(uniqueUsers.values()));
+      setUserCount(uniqueUsers.size);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -96,23 +119,23 @@ export default function AdminDashboard() {
   };
 
   const updateInquiryStatus = async (id: string, newStatus: string) => {
-  try {
-    const { error } = await supabase
-      .from('inquiries')
-      .update({ status: newStatus })
-      .eq('id', id);
+    try {
+      const { error } = await supabase
+        .from('inquiries')
+        .update({ status: newStatus })
+        .eq('id', id);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    // Update local state
-    setInquiries(inquiries.map(inq => 
-      inq.id === id ? { ...inq, status: newStatus } : inq
-    ));
-  } catch (error) {
-    console.error('Error updating inquiry status:', error);
-    alert('Failed to update status');
-  }
-};
+      // Update local state
+      setInquiries(inquiries.map(inq => 
+        inq.id === id ? { ...inq, status: newStatus } : inq
+      ));
+    } catch (error) {
+      console.error('Error updating inquiry status:', error);
+      alert('Failed to update status');
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -134,9 +157,6 @@ export default function AdminDashboard() {
           <h1 className="text-5xl font-serif text-amber-900 mb-4">
             Admin Dashboard
           </h1>
-          <p className="text-xl text-gray-700">
-            Manage your jewelry store
-          </p>
         </div>
 
         {/* Stats Overview */}
@@ -165,7 +185,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
               <Users className="w-12 h-12 text-amber-900" />
               <div>
-                <p className="text-gray-600 text-sm">Recent Contacts</p>
+                <p className="text-gray-600 text-sm">Total Contacts</p>
                 <p className="text-3xl font-bold text-amber-900">{userCount}</p>
               </div>
             </div>
@@ -203,6 +223,16 @@ export default function AdminDashboard() {
             }`}
           >
             Inquiries ({inquiries.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-6 py-3 font-semibold transition ${
+              activeTab === 'users'
+                ? 'border-b-4 border-amber-900 text-amber-900'
+                : 'text-gray-600 hover:text-amber-900'
+            }`}
+          >
+            Users ({users.length})
           </button>
         </div>
 
@@ -262,11 +292,11 @@ export default function AdminDashboard() {
               <table className="w-full">
                 <thead className="bg-amber-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-amber-900">Image</th>
-                    <th className="px-4 py-3 text-left text-amber-900">Name</th>
-                    <th className="px-4 py-3 text-left text-amber-900">Category</th>
-                    <th className="px-4 py-3 text-left text-amber-900">Price</th>
-                    <th className="px-4 py-3 text-left text-amber-900">Actions</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Image</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Name</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Category</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Price</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,9 +309,9 @@ export default function AdminDashboard() {
                           className="w-16 h-16 object-cover rounded"
                         />
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{product.name}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{product.name}</td>
                       <td className="px-4 py-3 capitalize text-gray-900">{product.category}</td>
-                      <td className="px-4 py-3 text-gray-900">${product.price.toLocaleString()}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">${product.price.toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           <button
@@ -307,54 +337,90 @@ export default function AdminDashboard() {
         )}
 
         {/* Inquiries Tab */}
-{activeTab === 'inquiries' && (
-  <div className="bg-white rounded-lg shadow-lg p-8">
-    <h2 className="text-2xl font-serif text-amber-900 mb-6">
-      Customer Inquiries
-    </h2>
+        {activeTab === 'inquiries' && (
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-serif text-amber-900 mb-6">
+              Customer Inquiries
+            </h2>
 
-    <div className="space-y-4">
-      {inquiries.map((inquiry) => (
-        <div key={inquiry.id} className="border rounded-lg p-6 hover:shadow-md transition">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-semibold text-lg text-amber-900">{inquiry.name}</h3>
-              <p className="text-gray-600 text-sm">{inquiry.email}</p>
+            <div className="space-y-4">
+              {inquiries.map((inquiry) => (
+                <div key={inquiry.id} className="border rounded-lg p-6 hover:shadow-md transition">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-semibold text-lg text-amber-900">{inquiry.name}</h3>
+                      <p className="text-gray-600 text-sm">{inquiry.email}</p>
+                    </div>
+                    
+                    {/* Status Dropdown */}
+                    <select
+                      value={inquiry.status}
+                      onChange={(e) => updateInquiryStatus(inquiry.id, e.target.value)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium border-2 cursor-pointer transition ${
+                        inquiry.status === 'new' 
+                          ? 'bg-green-100 text-green-700 border-green-300'
+                          : inquiry.status === 'in_progress'
+                          ? 'bg-blue-100 text-blue-700 border-blue-300'
+                          : 'bg-gray-100 text-gray-700 border-gray-300'
+                      }`}
+                    >
+                      <option value="new">New</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="resolved">Resolved</option>
+                    </select>
+                  </div>
+                  
+                  <p className="text-gray-700 mb-2">{inquiry.message}</p>
+                  <p className="text-gray-500 text-sm">
+                    {new Date(inquiry.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              ))}
             </div>
-            
-            {/* Status Dropdown */}
-            <select
-              value={inquiry.status}
-              onChange={(e) => updateInquiryStatus(inquiry.id, e.target.value)}
-              className={`px-3 py-1 rounded-full text-sm font-medium border-2 cursor-pointer transition ${
-                inquiry.status === 'new' 
-                  ? 'bg-green-100 text-green-700 border-green-300'
-                  : inquiry.status === 'in_progress'
-                  ? 'bg-blue-100 text-blue-700 border-blue-300'
-                  : 'bg-gray-100 text-gray-700 border-gray-300'
-              }`}
-            >
-              <option value="new">New</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-            </select>
           </div>
-          
-          <p className="text-gray-700 mb-2">{inquiry.message}</p>
-          <p className="text-gray-500 text-sm">
-            {new Date(inquiry.created_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-serif text-amber-900 mb-6">
+              Customer Contacts
+            </h2>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-amber-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Name</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Email</th>
+                    <th className="px-4 py-3 text-left text-amber-900 font-semibold">Inquiries</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 font-semibold text-gray-900">{user.name}</td>
+                      <td className="px-4 py-3 text-gray-900">{user.email}</td>
+                      <td className="px-4 py-3 text-gray-900">{user.inquiry_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {users.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                No customer contacts yet
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
