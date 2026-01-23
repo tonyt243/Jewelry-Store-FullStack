@@ -15,7 +15,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Add your admin email here
+
 const ADMIN_EMAIL = 'quochuyta243@gmail.com';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
