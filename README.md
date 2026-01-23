@@ -1,27 +1,49 @@
 # Kim Thao Trang Jewelry - Full Stack Web Application
 
-A modern, full-stack jewelry store website built with Next.js, featuring user authentication, product galleries, and customer engagement features.
-
-
 ##  Project Overview
 
-This is a complete redesign and upgrade of the Kim Thao Trang Jewelry store website, transforming it from a static HTML/CSS site into a dynamic full-stack application with user authentication and database integration.
+This is a complete redesign and upgrade of the Kim Thao Trang Jewelry store website, transforming it from a static HTML/CSS site into a dynamic full-stack application with user authentication, admin dashboard, and database integration.
 
-##  Tech Stack
+##  Features
+
+### Customer Features
+-  **User Authentication System**
+-  **Product Gallery**
+-  **Favorites System**
+-  **Contact System**
+-  **Additional Pages**
+  
+
+### Admin Features
+-  **Admin Dashboard** (Protected Route)
+-  **Product Management**
+-  **Inquiry Management**
+-  **User Management**
+
+
+### UI/UX Features
+-  **Modern Design**
+-  **Interactive Elements**
+  
+
+## Tech Stack
 
 ### Frontend
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
+- **Fonts**: Google Fonts (Playfair Display, Cormorant Garamond)
 - **UI Components**: Custom components with Lucide React icons
 - **Image Carousel**: Embla Carousel React
-- **Deployment**: Vercel (planned)
+- **Analytics**: Vercel Analytics
+- **Deployment**: Vercel
 
 ### Backend
 - **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
+- **Authentication**: Supabase Auth (Email/Password)
 - **API**: Next.js API Routes (built-in)
 - **File Storage**: Public folder for static assets
+- **Security**: Row Level Security (RLS) policies
 
 ### Development Tools
 - **Package Manager**: npm
@@ -30,31 +52,43 @@ This is a complete redesign and upgrade of the Kim Thao Trang Jewelry store webs
 - **Node Version**: 18+ required
 
 ##  Project Structure
-
 ```
 jewelry-store-fs/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
+│   │   ├── about/             # About Us page
+│   │   ├── admin/             # Admin dashboard
+│   │   │   └── products/
+│   │   │       └── edit/[id]/ # Edit product page
+│   │   ├── contact/           # Contact page with map
+│   │   ├── favorites/         # User favorites page
 │   │   ├── login/             # Login page
+│   │   ├── products/          # Products gallery
 │   │   ├── register/          # Registration page
+│   │   ├── services/          # Services page
 │   │   ├── layout.tsx         # Root layout with AuthProvider
-│   │   └── page.tsx           # Homepage
+│   │   ├── page.tsx           # Homepage with carousel
+│   │   └── globals.css        # Global styles
 │   ├── components/            # React components
-│   │   ├── Navbar.tsx         # Navigation bar with auth
+│   │   ├── Navbar.tsx         # Navigation with auth & clock
 │   │   ├── Footer.tsx         # Footer with store info
-│   │   └── Carousel.tsx       # Image carousel
+│   │   └── Carousel.tsx       # Auto-playing image carousel
 │   ├── context/               # React Context
-│   │   └── AuthContext.tsx    # Authentication state management
+│   │   └── AuthContext.tsx    # Authentication & admin state
 │   └── lib/                   # Utilities
 │       └── supabase.ts        # Supabase client configuration
 ├── public/
 │   └── images/                # Static images (logo, products, carousel)
-├── .env.local                 # Environment variables (not committed)
+├── .env.example               # Environment variables template
+├── supabase-setup.sql         # Database setup script
+├── LICENSE                    # MIT License
+├── README.md                  # Project documentation
 ├── package.json               # Dependencies
+├── tailwind.config.ts         # Tailwind configuration
 └── tsconfig.json              # TypeScript configuration
 ```
 
-##  Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -66,86 +100,68 @@ jewelry-store-fs/
 ### Installation
 
 1. **Clone the repository**
-   ```bash
+```bash
    git clone https://github.com/tonyt243/Jewelry-Store-FullStack.git
    cd Jewelry-Store-FullStack
-   ```
+```
 
 2. **Install dependencies**
-   ```bash
+```bash
    npm install
-   ```
+```
 
 3. **Set up environment variables**
    
-   Create a `.env.local` file in the root directory:
-   ```env
+   Create a `.env.local` file in the root directory (use `.env.example` as template):
+```env
    NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
+   NEXT_PUBLIC_ADMIN_EMAIL=your-admin-email@example.com
+```
 
 4. **Set up Supabase Database**
    
-   Run this SQL in your Supabase SQL Editor:
-   ```sql
-   -- Products table
-   CREATE TABLE products (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     name TEXT NOT NULL,
-     description TEXT,
-     price DECIMAL(10, 2),
-     category TEXT NOT NULL,
-     image_url TEXT,
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-   );
-
-   -- Favorites table
-   CREATE TABLE favorites (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-     UNIQUE(user_id, product_id)
-   );
-
-   -- Inquiries table
-   CREATE TABLE inquiries (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-     name TEXT NOT NULL,
-     email TEXT NOT NULL,
-     phone TEXT,
-     message TEXT NOT NULL,
-     product_id UUID REFERENCES products(id) ON DELETE SET NULL,
-     status TEXT DEFAULT 'new',
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
-   );
-
-   -- Enable RLS
-   ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
-
-   -- Policies
-   CREATE POLICY "Anyone can view products" ON products FOR SELECT USING (true);
-   CREATE POLICY "Users can view their own favorites" ON favorites FOR SELECT USING (auth.uid() = user_id);
-   CREATE POLICY "Users can add favorites" ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
-   CREATE POLICY "Users can remove favorites" ON favorites FOR DELETE USING (auth.uid() = user_id);
-   CREATE POLICY "Users can view their own inquiries" ON inquiries FOR SELECT USING (auth.uid() = user_id);
-   CREATE POLICY "Anyone can create inquiries" ON inquiries FOR INSERT WITH CHECK (true);
-   ```
+   Run the database setup script:
+   
+   a. Open your Supabase project dashboard
+   
+   b. Go to **SQL Editor**
+   
+   c. Click **"New Query"**
+   
+   d. Copy the entire contents of [`supabase-setup.sql`](./supabase-setup.sql)
+   
+   e. **IMPORTANT**: Replace all instances of `'your-admin-email@example.com'` with your actual admin email
+   
+   f. Click **"Run"** or press `Ctrl+Enter`
+   
+   g. Wait for success message: "Success. No rows returned"
 
 5. **Configure Supabase Authentication**
-   - Go to Authentication → Providers
-   - Enable Email provider
-   - Disable "Confirm email" (for development)
+   
+   a. Go to **Authentication** → **Providers**
+   
+   b. Enable **Email** provider
+   
+   c. Disable **"Confirm email"** (for development)
+   
+   d. Click **Save**
 
 6. **Run the development server**
-   ```bash
+```bash
    npm run dev
-   ```
+```
 
 7. **Open your browser**
+   
    Navigate to [http://localhost:3000](http://localhost:3000)
+
+8. **Create admin account**
+   
+   a. Click **"Login"** → **"Create one here"**
+   
+   b. Register with the email you set as `NEXT_PUBLIC_ADMIN_EMAIL`
+   
+   c. You'll now have access to the **Admin Dashboard** via the navbar
+
 
