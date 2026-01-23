@@ -16,7 +16,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Add your admin email here
-const ADMIN_EMAIL = 'quochuyta243@gmail.com'; // Replace with your actual admin email
+const ADMIN_EMAIL = 'quochuyta243@gmail.com';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -24,13 +24,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error.message);
+        // Clear any stale session data
+        supabase.auth.signOut();
+      }
       setUser(session?.user ?? null);
       setIsAdmin(session?.user?.email === ADMIN_EMAIL);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Handle token refresh errors
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Token refresh failed, signing out...');
+        await supabase.auth.signOut();
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
+
+      // Handle sign out
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsAdmin(false);
+        return;
+      }
+
+      // Normal auth state changes
       setUser(session?.user ?? null);
       setIsAdmin(session?.user?.email === ADMIN_EMAIL);
     });
