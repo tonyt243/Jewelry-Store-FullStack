@@ -20,7 +20,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Kim Thao Trang Jewelry - Timeless Elegance",
+  title: "Kim Thao Trang Jewelry",
   description: "Discover our exclusive collection of rings, necklaces, bracelets & earrings. Located in Ho Chi Minh City, Vietnam.",
   icons: {
     icon: '/images/logo.png',
