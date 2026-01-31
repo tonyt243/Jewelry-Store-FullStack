@@ -56,39 +56,60 @@ function ContactForm() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess(false);
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  setSuccess(false);
 
-    try {
-      const { error: submitError } = await supabase
-        .from('inquiries')
-        .insert({
-          user_id: user?.id || null,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          message: formData.message,
-          product_id: productId || null,
-          status: 'new',
-        });
+  try {
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: user?.id || null,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message,
+        product_id: productId || null,
+      }),
+    });
 
-      if (submitError) throw submitError;
+    const data = await response.json();
 
-      setSuccess(true);
-      if (!user) {
-        setFormData({ name: '', email: '', phone: '', message: '' });
-      } else {
-        setFormData({ ...formData, phone: '', message: '' });
+    if (!response.ok) {
+      if (response.status === 429) {
+        // Rate limited
+        const resetTime = new Date(data.resetTime);
+        const minutes = Math.ceil((resetTime.getTime() - Date.now()) / 60000);
+        throw new Error(`Too many requests. Please try again in ${minutes} minute(s).`);
       }
-      setProduct(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send message. Please try again.');
-    } finally {
-      setLoading(false);
+      throw new Error(data.error || 'Failed to send message');
     }
-  };
+
+    setSuccess(true);
+    
+    // Clear form
+    if (!user) {
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } else {
+      setFormData({ ...formData, phone: '', message: '' });
+    }
+    setProduct(null);
+
+    // Show remaining submissions
+    if (data.remaining !== undefined && data.remaining < 3) {
+      console.log(`You have ${data.remaining} submission(s) remaining this hour`);
+    }
+
+  } catch (err: any) {
+    setError(err.message || 'Failed to send message. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({

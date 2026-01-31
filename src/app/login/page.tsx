@@ -19,6 +19,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Check rate limit first
+      const rateLimitResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+      });
+
+      if (!rateLimitResponse.ok) {
+        const data = await rateLimitResponse.json();
+        throw new Error(data.error);
+      }
+
+      // Proceed with login
       await signIn(email, password);
       router.push('/');
     } catch (err: any) {

@@ -52,34 +52,45 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    // Validate password strength
-    const passwordValidationErrors = validatePassword(formData.password);
-    if (passwordValidationErrors.length > 0) {
-      setError('Please meet all password requirements');
-      setLoading(false);
-      return;
+  // Validate password strength
+  const passwordValidationErrors = validatePassword(formData.password);
+  if (passwordValidationErrors.length > 0) {
+    setError('Please meet all password requirements');
+    setLoading(false);
+    return;
+  }
+
+  // Check password confirmation
+  if (formData.password !== formData.confirmPassword) {
+    setError('Passwords do not match');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // Check rate limit first
+    const rateLimitResponse = await fetch('/api/auth/register', {
+      method: 'POST',
+    });
+
+    if (!rateLimitResponse.ok) {
+      const data = await rateLimitResponse.json();
+      throw new Error(data.error);
     }
 
-    // Check password confirmation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await signUp(formData.email, formData.password, formData.name);
-      router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Proceed with registration
+    await signUp(formData.email, formData.password, formData.name);
+    router.push('/');
+  } catch (err: any) {
+    setError(err.message || 'Failed to create account');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getPasswordStrength = (): { strength: string; color: string; width: string } => {
     const errors = validatePassword(formData.password);
