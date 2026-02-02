@@ -27,7 +27,7 @@ export function checkRateLimit(
   const now = Date.now();
   const entry = rateLimitMap.get(identifier);
 
-  // 🔍 DEBUG: Log current state
+  //DEBUG
   console.log(`\n🔒 [Rate Limit Check]`);
   console.log(`   Identifier: ${identifier}`);
   console.log(`   Limit: ${config.limit} requests per ${config.windowMs / 1000}s`);
