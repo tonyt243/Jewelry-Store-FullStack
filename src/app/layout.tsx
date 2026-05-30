@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import { Playfair_Display, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
-
+import PageTransition from "@/components/PageTransition";
 
 const playfair = Playfair_Display({ 
   subsets: ['latin'],
@@ -38,7 +38,9 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar />
           <main className="flex-grow">
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </main>
           <Footer />
         </AuthProvider>
