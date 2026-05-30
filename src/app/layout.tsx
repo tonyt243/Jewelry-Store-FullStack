@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Playfair_Display, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import PageTransition from "@/components/PageTransition";
+import BackToTop from "@/components/BackToTop";
 
 const playfair = Playfair_Display({ 
   subsets: ['latin'],
@@ -43,6 +44,7 @@ export default function RootLayout({
             </PageTransition>
           </main>
           <Footer />
+          <BackToTop />
         </AuthProvider>
         <Analytics />
       </body>

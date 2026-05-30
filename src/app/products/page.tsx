@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { ChevronDown, Heart, Gem, Sparkles, Link2, Star, LayoutGrid } from 'lucide-react';
+import { ChevronDown, Heart, Gem, Sparkles, Link2, Star, LayoutGrid, X, ZoomIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Product = {
@@ -45,6 +45,7 @@ export default function ProductsPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<Product | null>(null);
 
   const categories = [
     { value: 'all',       label: 'All',       icon: LayoutGrid },
@@ -122,6 +123,13 @@ export default function ProductsPage() {
 
   const getCurrentSortLabel = () =>
     sortOptions.find(opt => opt.value === sortOrder)?.label || 'Default';
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightbox(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
@@ -266,13 +274,19 @@ export default function ProductsPage() {
                 </motion.button>
 
                 {/* Image */}
-                <div className="relative aspect-square overflow-hidden bg-amber-50">
+                <div
+                  className="relative aspect-square overflow-hidden bg-amber-50 cursor-zoom-in"
+                  onClick={() => setLightbox(product)}
+                >
                   <img
                     src={product.image_url}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                    style={{ '--tw-scale-x': '1.08', '--tw-scale-y': '1.08' } as React.CSSProperties}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+                  {/* Zoom hint on hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+                    <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg" />
+                  </div>
                   {/* Category badge */}
                   <div className="absolute bottom-2 left-2">
                     <span className="bg-white/80 backdrop-blur-sm text-amber-900 text-xs font-medium px-2.5 py-1 rounded-full capitalize tracking-wide">
@@ -307,6 +321,79 @@ export default function ProductsPage() {
           </motion.div>
         )}
       </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setLightbox(null)}
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div
+              className="relative z-10 bg-white rounded-2xl overflow-hidden shadow-2xl max-w-3xl w-full flex flex-col md:flex-row"
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close */}
+              <motion.button
+                className="absolute top-3 right-3 z-20 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md text-gray-600 hover:text-amber-900 transition-colors"
+                onClick={() => setLightbox(null)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+
+              {/* Image */}
+              <div className="md:w-1/2 aspect-square bg-amber-50 shrink-0">
+                <img src={lightbox.image_url} alt={lightbox.name} className="w-full h-full object-cover" />
+              </div>
+
+              {/* Details */}
+              <div className="md:w-1/2 p-8 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs tracking-widest uppercase text-amber-600 font-medium">
+                    {lightbox.category}
+                  </span>
+                  <h2 className="text-2xl font-serif text-amber-900 mt-2 mb-3">{lightbox.name}</h2>
+                  <div className="h-px bg-gradient-to-r from-amber-300 to-transparent mb-4" />
+                  <p className="text-gray-500 text-sm leading-relaxed">{lightbox.description}</p>
+                </div>
+                <div className="mt-6">
+                  <p className="text-3xl font-bold text-amber-900 mb-4">${lightbox.price.toLocaleString()}</p>
+                  <div className="flex gap-3">
+                    <Link
+                      href={`/contact?product=${lightbox.id}`}
+                      className="relative overflow-hidden flex-1 bg-amber-900 text-white py-3 rounded-lg text-sm font-medium text-center group/btn"
+                      onClick={() => setLightbox(null)}
+                    >
+                      <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                      <span className="relative">Inquire Now</span>
+                    </Link>
+                    <motion.button
+                      onClick={() => toggleFavorite(lightbox.id)}
+                      className="p-3 border-2 border-amber-200 rounded-lg hover:border-amber-900 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Heart className={`w-5 h-5 ${favoriteIds.has(lightbox.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
