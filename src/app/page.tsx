@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Carousel from '@/components/Carousel';
 import { motion } from 'framer-motion';
 
-// Reusable scroll-reveal wrapper
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   return (
     <motion.div
@@ -19,6 +18,17 @@ function FadeUp({ children, delay = 0, className = '' }: { children: React.React
   );
 }
 
+const marqueeItems = [
+  '✦ Fine Jewelry',
+  '✦ Custom Orders',
+  '✦ Hồ Chí Minh City',
+  '✦ Authentic Gold',
+  '✦ Expert Craftsmanship',
+  '✦ Est. 2002',
+  '✦ Rings & Necklaces',
+  '✦ Bracelets & Earrings',
+];
+
 export default function Home() {
   const categories = [
     { name: 'Rings', image: '/images/rings.webp', link: '/products?category=rings' },
@@ -31,16 +41,15 @@ export default function Home() {
     <div>
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-amber-50 to-white overflow-hidden">
-        {/* Subtle background texture */}
-        <div className="absolute inset-0 opacity-30 pointer-events-none"
+        <div
+          className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
             backgroundImage: `radial-gradient(circle at 20% 50%, #f5deb340 0%, transparent 50%),
-                              radial-gradient(circle at 80% 20%, #d4af3720 0%, transparent 40%)`
+                              radial-gradient(circle at 80% 20%, #d4af3720 0%, transparent 40%)`,
           }}
         />
 
         <div className="max-w-7xl mx-auto px-4 py-20 text-center relative z-10">
-          {/* Eyebrow label */}
           <motion.p
             className="text-amber-700 tracking-[0.3em] uppercase text-sm font-medium mb-4"
             initial={{ opacity: 0, y: 10 }}
@@ -49,7 +58,6 @@ export default function Home() {
           >
           </motion.p>
 
-          {/* Main heading */}
           <motion.h1
             className="text-5xl md:text-6xl font-serif text-amber-900 mb-4 leading-tight"
             initial={{ opacity: 0, y: 30 }}
@@ -59,7 +67,6 @@ export default function Home() {
             Welcome to Kim Thao Trang Jewelry
           </motion.h1>
 
-          {/* Animated gold divider */}
           <motion.div
             className="mx-auto my-6 h-px bg-gradient-to-r from-transparent via-amber-600 to-transparent"
             initial={{ scaleX: 0, opacity: 0 }}
@@ -77,7 +84,6 @@ export default function Home() {
             Discover our exclusive collection of rings, necklaces, bracelets & earrings
           </motion.p>
 
-          {/* Shop Now button with shimmer */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,14 +93,12 @@ export default function Home() {
               href="/products"
               className="relative inline-block overflow-hidden bg-amber-900 text-white px-10 py-3.5 rounded-md text-lg font-medium group"
             >
-              {/* Shimmer sweep on hover */}
               <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
               <span className="relative">Shop Now</span>
             </Link>
           </motion.div>
         </div>
 
-        {/* Carousel with fade-in */}
         <motion.div
           className="max-w-6xl mx-auto px-4 pb-16"
           initial={{ opacity: 0, y: 40 }}
@@ -104,6 +108,32 @@ export default function Home() {
           <Carousel />
         </motion.div>
       </section>
+
+      {/* Marquee Banner */}
+      <div className="bg-amber-900 py-3 overflow-hidden">
+        <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .marquee-track {
+            display: flex;
+            width: max-content;
+            animation: marquee 25s linear infinite;
+          }
+        `}</style>
+        <div className="marquee-track">
+          {[0, 1, 2, 3].map((copy) => (
+            <div key={copy} className="flex shrink-0">
+              {marqueeItems.map((item, i) => (
+                <span key={i} className="text-amber-100 text-sm font-medium tracking-widest uppercase mx-8 whitespace-nowrap">
+                  {item}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Shop By Category */}
       <section className="py-16 bg-white">
@@ -119,10 +149,7 @@ export default function Home() {
                 <Link href={category.link} className="group block">
                   <motion.div
                     className="relative aspect-square rounded-lg overflow-hidden mb-4 shadow-md"
-                    whileHover={{
-                      y: -6,
-                      boxShadow: '0 12px 40px rgba(180, 120, 30, 0.25)',
-                    }}
+                    whileHover={{ y: -6, boxShadow: '0 12px 40px rgba(180, 120, 30, 0.25)' }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
                     <img
@@ -130,17 +157,13 @@ export default function Home() {
                       alt={category.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
-                    {/* Gold overlay on hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-amber-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    {/* Browse label that appears on hover */}
                     <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center pb-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                       <span className="text-white text-sm font-medium tracking-widest uppercase border border-white/60 px-4 py-1.5 rounded-full backdrop-blur-sm">
                         Browse
                       </span>
                     </div>
                   </motion.div>
-
                   <h3 className="text-xl font-serif text-center text-amber-900 mb-1 group-hover:text-amber-700 transition-colors duration-200">
                     {category.name}
                   </h3>
