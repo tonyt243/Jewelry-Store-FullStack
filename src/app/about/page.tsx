@@ -1,224 +1,263 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
-import { Shield, Gem, Wrench } from 'lucide-react';
+import { Shield, Gem, Wrench, MapPin, Clock, Phone, Mail } from 'lucide-react';
 
-function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+// Scroll-zoom section wrapper
+function ZoomSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.88, 1, 1, 0.95]);
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
+    <motion.div ref={ref} style={{ scale, opacity }} className={className}>
       {children}
     </motion.div>
   );
 }
 
-function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
+// Slot-machine number scramble
+const CHARS = '0123456789';
+function ScrambleNumber({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const [display, setDisplay] = useState('0');
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
 
   useEffect(() => {
     if (!inView) return;
-    let start = 0;
-    const duration = 1800;
-    const step = 16;
-    const increment = target / (duration / step);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
+    const targetStr = String(target);
+    const duration = 1600;
+    const start = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      if (progress < 1) {
+        // Scramble: mix random digits with correct digits from left as progress increases
+        const revealedCount = Math.floor(eased * targetStr.length);
+        const scrambled = targetStr
+          .split('')
+          .map((char, i) =>
+            i < revealedCount
+              ? char
+              : CHARS[Math.floor(Math.random() * CHARS.length)]
+          )
+          .join('');
+        setDisplay(scrambled);
+        requestAnimationFrame(animate);
       } else {
-        setCount(Math.floor(start));
+        setDisplay(targetStr);
       }
-    }, step);
-    return () => clearInterval(timer);
+    };
+    requestAnimationFrame(animate);
   }, [inView, target]);
 
-  return <span ref={ref}>{count}{suffix}</span>;
+  return <span ref={ref}>{display}{suffix}</span>;
+}
+
+// Staggered letter reveal
+function LetterReveal({ text, className = '' }: { text: string; className?: string }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-40px' });
+
+  return (
+    <span ref={ref} className={className} aria-label={text}>
+      {text.split('').map((char, i) => (
+        <motion.span
+          key={i}
+          className="inline-block"
+          initial={{ opacity: 0, y: 20, rotateX: -90 }}
+          animate={inView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
+          transition={{ delay: i * 0.04, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          style={{ whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+        >
+          {char === ' ' ? '\u00a0' : char}
+        </motion.span>
+      ))}
+    </span>
+  );
 }
 
 export default function AboutPage() {
   const stats = [
-    { value: 500, suffix: '+', label: 'Products' },
-    { value: 20, suffix: '+', label: 'Years of Experience' },
-    { value: 1000, suffix: '+', label: 'Happy Customers' },
-    { value: 4, suffix: '', label: 'Collections' },
+    { value: 500,  suffix: '+', label: 'Products' },
+    { value: 20,   suffix: '+', label: 'Years' },
+    { value: 1000, suffix: '+', label: 'Customers' },
+    { value: 4,    suffix: '',  label: 'Collections' },
   ];
 
   const features = [
-    {
-      icon: Gem,
-      title: 'Authentic Gold',
-      description: 'Every piece is crafted from certified, high-quality gold and gemstones — guaranteed authentic.',
-    },
-    {
-      icon: Wrench,
-      title: 'Custom Orders',
-      description: 'Work with our artisans to design a one-of-a-kind piece made exactly to your vision.',
-    },
-    {
-      icon: Shield,
-      title: 'Expert Craftsmanship',
-      description: 'Over 20 years of experience in fine jewelry, combining traditional and modern techniques.',
-    },
+    { icon: Gem,    title: 'Authentic Gold',      description: 'Certified gold & gemstones — guaranteed real.' },
+    { icon: Wrench, title: 'Custom Orders',        description: 'Design your own piece with our artisans.' },
+    { icon: Shield, title: 'Expert Craftsmanship', description: '20+ years of fine jewelry tradition.' },
+  ];
+
+  const contact = [
+    { icon: MapPin, text: '186-188 Đ. Lê Thánh Tôn, Quận 1, Hồ Chí Minh' },
+    { icon: Clock,  text: 'Mon – Sun: 9:00 AM – 6:30 PM' },
+    { icon: Phone,  text: '+84 903 743 132' },
+    { icon: Mail,   text: 'quochuyta243@gmail.com' },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 py-16">
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white overflow-x-hidden">
 
-        {/* Header */}
-        <FadeUp className="text-center mb-16">
-          <h1 className="text-5xl font-serif text-amber-900 mb-4">About Us</h1>
-          <div className="mx-auto my-4 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent" style={{ width: '140px' }} />
-          <p className="text-xl text-gray-600">A Legacy of Excellence Since 2002</p>
-        </FadeUp>
-
-        {/* Our Story */}
-        <FadeUp>
-          <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-12 mb-12">
-            <h2 className="text-4xl font-serif text-amber-900 mb-8 text-center">Our Story</h2>
-            <div className="max-w-none text-gray-700 space-y-6">
-              <p className="text-lg leading-relaxed">
-                Founded in <strong>2002</strong>, Kim Thao Trang Jewelry represents over two decades of passion,
-                dedication, and expertise in fine jewelry. Our journey began with a young apprentice's dream
-                and has blossomed into a trusted name in Ho Chi Minh City's jewelry industry.
-              </p>
-              <p className="text-lg leading-relaxed">
-                Our founder spent <strong>10 years</strong> learning the intricate art of jewelry from her mother,
-                mastering every aspect of the craft — from selecting the finest materials to understanding what
-                makes each piece truly special. This decade of apprenticeship wasn't just about learning
-                techniques; it was about inheriting a legacy of quality, trust, and genuine care for customers.
-              </p>
-              <p className="text-lg leading-relaxed">
-                With her mentor's blessing and a commitment to excellence, she opened Kim Thao Trang Jewelry,
-                bringing her vision to life: to offer <strong>exceptional quality at affordable prices</strong>.
-                Every piece in our collection reflects this philosophy — carefully selected, expertly crafted,
-                and priced with fairness.
-              </p>
-            </div>
+      {/* Hero */}
+      <ZoomSection>
+        <div className="relative bg-amber-950 text-white py-28 text-center overflow-hidden">
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, #d4af37 0%, transparent 60%), radial-gradient(circle at 70% 30%, #d4af37 0%, transparent 50%)' }}
+          />
+          <div className="relative z-10 max-w-3xl mx-auto px-4">
+            <motion.p
+              className="text-amber-400 tracking-[0.4em] uppercase text-xs mb-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              Est. 2002 · Hồ Chí Minh City
+            </motion.p>
+            <h1 className="text-6xl font-serif mb-4 perspective-[800px]">
+              <LetterReveal text="Our Story" />
+            </h1>
+            <motion.div
+              className="mx-auto h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mb-6"
+              style={{ width: '120px' }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            />
+            <motion.p
+              className="text-amber-200 text-lg"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.8 }}
+            >
+              Two decades of passion, craft, and family.
+            </motion.p>
           </div>
-        </FadeUp>
+        </div>
+      </ZoomSection>
 
-        {/* Stats Bar */}
-        <FadeUp>
-          <div className="bg-amber-950 rounded-xl py-12 px-8 mb-12">
+      <div className="max-w-6xl mx-auto px-4 py-20 space-y-24">
+
+        {/* Timeline */}
+        <ZoomSection>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { year: '2002',   text: 'Kim Thao Trang Jewelry opens its doors in Ho Chi Minh City.' },
+              { year: '10 yrs', text: 'Our founder trained under her mother, mastering every detail of the craft.' },
+              { year: 'Today',  text: 'A trusted name offering exceptional quality at honest prices.' },
+            ].map((item, i) => (
+              <motion.div
+                key={item.year}
+                className="bg-white rounded-2xl p-8 border border-amber-100 shadow-sm text-center"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -5, boxShadow: '0 16px 40px rgba(180,120,30,0.12)' }}
+              >
+                <p className="text-3xl font-serif text-amber-600 mb-3">{item.year}</p>
+                <div className="h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent mb-3" />
+                <p className="text-gray-500 text-sm leading-relaxed">{item.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </ZoomSection>
+
+        {/* Stats — scramble ticker */}
+        <ZoomSection>
+          <div className="bg-amber-950 rounded-2xl py-14 px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {stats.map((stat, index) => (
+              {stats.map((stat, i) => (
                 <motion.div
                   key={stat.label}
-                  className="text-amber-100"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.6 }}
+                  transition={{ delay: i * 0.1, duration: 0.6 }}
                 >
-                  <p className="text-4xl md:text-5xl font-serif font-bold text-amber-300 mb-1">
-                    <CountUp target={stat.value} suffix={stat.suffix} />
+                  <p className="text-5xl font-serif font-bold text-amber-300 mb-1 tabular-nums">
+                    <ScrambleNumber target={stat.value} suffix={stat.suffix} />
                   </p>
-                  <p className="text-sm tracking-widest uppercase text-amber-200/70">{stat.label}</p>
+                  <p className="text-xs tracking-widest uppercase text-amber-200/60">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
           </div>
-        </FadeUp>
+        </ZoomSection>
 
         {/* Why Choose Us */}
-        <FadeUp className="mb-12">
+        <ZoomSection>
           <div className="text-center mb-10">
-            <h2 className="text-4xl font-serif text-amber-900 mb-3">Why Choose Us</h2>
-            <div className="mx-auto h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent" style={{ width: '120px' }} />
-            <p className="text-gray-500 mt-4 max-w-xl mx-auto">
-              Trusted by families across Vietnam for over two decades of fine jewelry excellence.
-            </p>
+            <h2 className="text-4xl font-serif text-amber-900 mb-3">
+              <LetterReveal text="Why Choose Us" />
+            </h2>
+            <div className="mx-auto h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent" style={{ width: '100px' }} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {features.map((f, i) => (
               <motion.div
-                key={feature.title}
-                className="bg-white rounded-xl p-8 text-center shadow-sm border border-amber-100 group"
+                key={f.title}
+                className="bg-white rounded-2xl p-8 text-center border border-amber-100 shadow-sm group"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.15, duration: 0.6 }}
-                whileHover={{ y: -6, boxShadow: '0 16px 48px rgba(180, 120, 30, 0.12)' }}
+                transition={{ delay: i * 0.12, duration: 0.6 }}
+                whileHover={{ y: -6, boxShadow: '0 16px 48px rgba(180,120,30,0.12)' }}
               >
-                <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center group-hover:bg-amber-900 transition-colors duration-300">
-                  <feature.icon className="w-7 h-7 text-amber-900 group-hover:text-amber-100 transition-colors duration-300" />
+                <div className="mx-auto mb-5 w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center group-hover:bg-amber-900 transition-colors duration-300">
+                  <f.icon className="w-6 h-6 text-amber-900 group-hover:text-white transition-colors duration-300" />
                 </div>
-                <h3 className="text-xl font-serif text-amber-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-500 leading-relaxed text-sm">{feature.description}</p>
+                <h3 className="text-lg font-serif text-amber-900 mb-2">{f.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{f.description}</p>
               </motion.div>
             ))}
           </div>
-        </FadeUp>
+        </ZoomSection>
 
-        {/* Our Commitment */}
-        <FadeUp>
-          <div className="bg-amber-900 text-white rounded-xl shadow-sm p-12 mb-12">
-            <h2 className="text-4xl font-serif mb-6 text-center">Our Commitment to You</h2>
-            <div className="max-w-3xl mx-auto text-center space-y-4">
-              <p className="text-lg leading-relaxed text-amber-100">
-                Every piece of jewelry tells a story, and we're honored to be part of yours.
-                Whether you're celebrating a milestone, expressing love, or simply treating yourself,
-                we ensure that your experience with us is as memorable as the jewelry itself.
-              </p>
-              <p className="text-lg leading-relaxed text-amber-100">
-                From selection to service, we bring the same care and attention that has been passed
-                down through generations. When you choose Kim Thao Trang Jewelry, you're not just
-                buying jewelry — you're becoming part of our family's legacy.
-              </p>
-            </div>
-          </div>
-        </FadeUp>
-
-        {/* Visit Our Store */}
-        <FadeUp>
-          <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-12 text-center">
-            <h2 className="text-4xl font-serif text-amber-900 mb-6">Visit Our Store</h2>
-            <div className="max-w-2xl mx-auto space-y-4 text-gray-700 text-lg mb-8">
-              <p>
-                <strong>Address:</strong><br />
-                186-188, Đ. Lê Thánh Tôn, P, Quận 1<br />
-                Hồ Chí Minh, Vietnam
-              </p>
-              <p>
-                <strong>Store Hours:</strong><br />
-                Monday - Sunday: 9:00 AM - 6:30 PM
-              </p>
-              <p>
-                <strong>Phone:</strong> +84 903 743 132<br />
-                <strong>Email:</strong> quochuyta243@gmail.com
-              </p>
-            </div>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                <Link
-                  href="/contact"
-                  className="inline-block bg-amber-900 text-white px-8 py-3 rounded-md hover:bg-amber-800 transition text-lg font-medium"
+        {/* Visit Us */}
+        <ZoomSection>
+          <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-12">
+            <h2 className="text-4xl font-serif text-amber-900 text-center mb-2">
+              <LetterReveal text="Visit Us" />
+            </h2>
+            <div className="mx-auto h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mb-10" style={{ width: '100px' }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto mb-10">
+              {contact.map((item, i) => (
+                <motion.div
+                  key={i}
+                  className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-100"
+                  initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
                 >
+                  <item.icon className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-gray-600 text-lg leading-relaxed">{item.text}</p>
+                </motion.div>
+              ))}
+            </div>
+            <div className="flex gap-6 justify-center flex-wrap">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+                <Link href="/contact" className="inline-block bg-amber-900 text-white px-8 py-3 rounded-lg hover:bg-amber-800 transition font-medium">
                   Contact Us
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-                <Link
-                  href="/products"
-                  className="inline-block border-2 border-amber-900 text-amber-900 px-8 py-3 rounded-md hover:bg-amber-50 transition text-lg font-medium"
-                >
+                <Link href="/products" className="inline-block border-2 border-amber-900 text-amber-900 px-8 py-3 rounded-lg hover:bg-amber-50 transition font-medium">
                   Browse Collection
                 </Link>
               </motion.div>
             </div>
           </div>
-        </FadeUp>
+        </ZoomSection>
 
       </div>
     </div>
