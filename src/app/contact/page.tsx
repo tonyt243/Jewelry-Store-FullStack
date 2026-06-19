@@ -117,6 +117,12 @@ function ContactForm() {
     });
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits, spaces, +, -, and parentheses (covers international formats)
+    const cleaned = e.target.value.replace(/[^0-9+\-\s()]/g, '');
+    setFormData({ ...formData, phone: cleaned });
+  };
+
   const inputClass = (field: string) =>
     `w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200 text-gray-900 placeholder:text-gray-400 ${
       focusedField === field
@@ -239,11 +245,13 @@ function ContactForm() {
               id="phone"
               name="phone"
               value={formData.phone}
-              onChange={handleChange}
+              onChange={handlePhoneChange}
               onFocus={() => setFocusedField('phone')}
               onBlur={() => setFocusedField(null)}
               className={inputClass('phone')}
               placeholder="+84 123 456 789"
+              inputMode="tel"
+              pattern="[0-9+\-\s()]*"
             />
           </div>
 
