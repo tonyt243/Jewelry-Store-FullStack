@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
-import { ChevronDown, Heart, Gem, Sparkles, Link2, Star, LayoutGrid, X, ZoomIn } from 'lucide-react';
+import { ChevronDown, Heart, Gem, Sparkles, Link2, Star, LayoutGrid, X, ZoomIn, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Product = {
@@ -18,7 +18,6 @@ type Product = {
 
 type SortOption = 'none' | 'asc' | 'desc';
 
-// Skeleton card for loading state
 function SkeletonCard() {
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse">
@@ -46,6 +45,7 @@ export default function ProductsPage() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const categories = [
     { value: 'all',       label: 'All',       icon: LayoutGrid },
@@ -131,13 +131,22 @@ export default function ProductsPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Filter products by search query (name + description)
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    const q = searchQuery.toLowerCase();
+    return products.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
+    );
+  }, [products, searchQuery]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
       <div className="max-w-7xl mx-auto px-4 py-16">
 
         {/* Header */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-10"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -146,9 +155,42 @@ export default function ProductsPage() {
           <div className="mx-auto h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent" style={{ width: '140px' }} />
         </motion.div>
 
+        {/* Search Bar */}
+        <motion.div
+          className="max-w-md mx-auto mb-8"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-700" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for rings, necklaces, gold..."
+              className="w-full pl-11 pr-10 py-3 border-2 border-amber-100 rounded-full text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-amber-900 transition-colors duration-200 bg-white shadow-sm"
+            />
+            <AnimatePresence>
+              {searchQuery && (
+                <motion.button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-amber-900 transition-colors"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
         {/* Filter + Sort */}
         <motion.div
-          className="mb-12"
+          className="mb-8"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
@@ -217,18 +259,45 @@ export default function ProductsPage() {
           </div>
         </motion.div>
 
+        {/* Results count when searching */}
+        <AnimatePresence>
+          {searchQuery && !loading && (
+            <motion.p
+              className="text-center text-sm text-gray-500 mb-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {filteredProducts.length === 0
+                ? `No results for "${searchQuery}"`
+                : `${filteredProducts.length} result${filteredProducts.length !== 1 ? 's' : ''} for "${searchQuery}"`}
+            </motion.p>
+          )}
+        </AnimatePresence>
+
         {/* Products Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <motion.div
             className="text-center py-20"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <p className="text-xl text-gray-500">No products found in this category.</p>
+            <Search className="w-14 h-14 text-amber-100 mx-auto mb-4" />
+            <p className="text-xl text-gray-500 mb-4">
+              {searchQuery ? `No products match "${searchQuery}"` : 'No products found in this category.'}
+            </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-amber-900 underline text-sm font-medium hover:text-amber-700"
+              >
+                Clear search
+              </button>
+            )}
           </motion.div>
         ) : (
           <motion.div
@@ -240,84 +309,86 @@ export default function ProductsPage() {
               show: { transition: { staggerChildren: 0.07 } },
             }}
           >
-            {products.map((product) => (
-              <motion.div
-                key={product.id}
-                variants={{
-                  hidden: { opacity: 0, y: 24 },
-                  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
-                }}
-                whileHover={{ y: -5, boxShadow: '0 16px 40px rgba(180,120,30,0.15)' }}
-                transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-                className="bg-white rounded-xl shadow-sm overflow-hidden relative group border border-amber-50"
-              >
-                {/* Favorite Button */}
-                <motion.button
-                  onClick={() => toggleFavorite(product.id)}
-                  className="absolute top-3 right-3 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.85 }}
-                  disabled={togglingId === product.id}
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product) => (
+                <motion.div
+                  key={product.id}
+                  layout
+                  variants={{
+                    hidden: { opacity: 0, y: 24 },
+                    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+                  }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ y: -5, boxShadow: '0 16px 40px rgba(180,120,30,0.15)' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden relative group border border-amber-50"
                 >
-                  <motion.div
-                    animate={togglingId === product.id ? { scale: [1, 1.4, 1] } : {}}
-                    transition={{ duration: 0.3 }}
+                  {/* Favorite Button */}
+                  <motion.button
+                    onClick={() => toggleFavorite(product.id)}
+                    className="absolute top-3 right-3 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md"
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.85 }}
+                    disabled={togglingId === product.id}
                   >
-                    <Heart
-                      className={`w-5 h-5 transition-colors duration-200 ${
-                        favoriteIds.has(product.id)
-                          ? 'fill-red-500 text-red-500'
-                          : 'text-gray-300 group-hover:text-gray-400'
-                      }`}
-                    />
-                  </motion.div>
-                </motion.button>
-
-                {/* Image */}
-                <div
-                  className="relative aspect-square overflow-hidden bg-amber-50 cursor-zoom-in"
-                  onClick={() => setLightbox(product)}
-                >
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  {/* Zoom hint on hover */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                    <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg" />
-                  </div>
-                  {/* Category badge */}
-                  <div className="absolute bottom-2 left-2">
-                    <span className="bg-white/80 backdrop-blur-sm text-amber-900 text-xs font-medium px-2.5 py-1 rounded-full capitalize tracking-wide">
-                      {product.category}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-5">
-                  <h3 className="text-lg font-serif text-amber-900 mb-1 leading-snug">
-                    {product.name}
-                  </h3>
-                  <p className="text-gray-400 text-sm mb-4 line-clamp-2 leading-relaxed">
-                    {product.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-amber-900">
-                      ${product.price.toLocaleString()}
-                    </span>
-                    <Link
-                      href={`/contact?product=${product.id}`}
-                      className="relative overflow-hidden bg-amber-900 text-white px-4 py-2 rounded-md text-sm font-medium group/btn inline-block"
+                    <motion.div
+                      animate={togglingId === product.id ? { scale: [1, 1.4, 1] } : {}}
+                      transition={{ duration: 0.3 }}
                     >
-                      <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                      <span className="relative">Inquire</span>
-                    </Link>
+                      <Heart
+                        className={`w-5 h-5 transition-colors duration-200 ${
+                          favoriteIds.has(product.id)
+                            ? 'fill-red-500 text-red-500'
+                            : 'text-gray-300 group-hover:text-gray-400'
+                        }`}
+                      />
+                    </motion.div>
+                  </motion.button>
+
+                  {/* Image */}
+                  <div
+                    className="relative aspect-square overflow-hidden bg-amber-50 cursor-zoom-in"
+                    onClick={() => setLightbox(product)}
+                  >
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+                      <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg" />
+                    </div>
+                    <div className="absolute bottom-2 left-2">
+                      <span className="bg-white/80 backdrop-blur-sm text-amber-900 text-xs font-medium px-2.5 py-1 rounded-full capitalize tracking-wide">
+                        {product.category}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+
+                  {/* Info */}
+                  <div className="p-5">
+                    <h3 className="text-lg font-serif text-amber-900 mb-1 leading-snug">
+                      {product.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2 leading-relaxed">
+                      {product.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl font-bold text-amber-900">
+                        ${product.price.toLocaleString()}
+                      </span>
+                      <Link
+                        href={`/contact?product=${product.id}`}
+                        className="relative overflow-hidden bg-amber-900 text-white px-4 py-2 rounded-md text-sm font-medium group/btn inline-block"
+                      >
+                        <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                        <span className="relative">Inquire</span>
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </motion.div>
         )}
       </div>
@@ -342,7 +413,6 @@ export default function ProductsPage() {
               transition={{ type: 'spring', stiffness: 300, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close */}
               <motion.button
                 className="absolute top-3 right-3 z-20 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-md text-gray-600 hover:text-amber-900 transition-colors"
                 onClick={() => setLightbox(null)}
@@ -353,12 +423,10 @@ export default function ProductsPage() {
                 <X className="w-5 h-5" />
               </motion.button>
 
-              {/* Image */}
               <div className="md:w-1/2 aspect-square bg-amber-50 shrink-0">
                 <img src={lightbox.image_url} alt={lightbox.name} className="w-full h-full object-cover" />
               </div>
 
-              {/* Details */}
               <div className="md:w-1/2 p-8 flex flex-col justify-between">
                 <div>
                   <span className="text-xs tracking-widest uppercase text-amber-600 font-medium">
