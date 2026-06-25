@@ -7,6 +7,7 @@ import { Playfair_Display, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import PageTransition from "@/components/PageTransition";
 import BackToTop from "@/components/BackToTop";
+import FaqChatbot from "@/components/FaqChatbot";
 
 const playfair = Playfair_Display({ 
   subsets: ['latin'],
@@ -45,6 +46,7 @@ export default function RootLayout({
           </main>
           <Footer />
           <BackToTop />
+          <FaqChatbot />
         </AuthProvider>
         <Analytics />
       </body>
