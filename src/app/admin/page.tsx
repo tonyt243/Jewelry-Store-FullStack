@@ -26,10 +26,13 @@ type Inquiry = {
   created_at: string;
 };
 
-type UserProfile = {
+type RegisteredUser = {
+  id: string;
   email: string;
-  name: string;
-  inquiry_count: number;
+  name: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  confirmed: boolean;
 };
 
 type Tab = 'overview' | 'products' | 'inquiries' | 'users';
@@ -51,7 +54,9 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [users, setUsers] = useState<RegisteredUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState('');
   const [userCount, setUserCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -66,6 +71,7 @@ export default function AdminDashboard() {
     }
     if (user && isAdmin) {
       fetchDashboardData();
+      fetchRegisteredUsers();
     }
   }, [user, isAdmin, authLoading, router]);
 
@@ -85,29 +91,40 @@ export default function AdminDashboard() {
         .order('created_at', { ascending: false });
       if (inquiriesError) throw inquiriesError;
       setInquiries(inquiriesData || []);
-
-      const uniqueUsers = new Map<string, UserProfile>();
-      inquiriesData?.forEach((inquiry) => {
-        if (inquiry.email) {
-          if (uniqueUsers.has(inquiry.email)) {
-            const u = uniqueUsers.get(inquiry.email)!;
-            u.inquiry_count += 1;
-          } else {
-            uniqueUsers.set(inquiry.email, {
-              email: inquiry.email,
-              name: inquiry.name,
-              inquiry_count: 1,
-            });
-          }
-        }
-      });
-
-      setUsers(Array.from(uniqueUsers.values()));
-      setUserCount(uniqueUsers.size);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRegisteredUsers = async () => {
+    setUsersLoading(true);
+    setUsersError('');
+    try {
+      // Get the current session's access token to authenticate the API request
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch('/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to fetch users');
+      }
+
+      const { users: fetchedUsers } = await response.json();
+      setUsers(fetchedUsers);
+      setUserCount(fetchedUsers.length);
+    } catch (error: any) {
+      console.error('Error fetching registered users:', error);
+      setUsersError(error.message || 'Failed to load users');
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -199,7 +216,7 @@ export default function AdminDashboard() {
   const statCards = [
     { icon: Package, label: 'Total Products', value: products.length },
     { icon: MessageSquare, label: 'Total Inquiries', value: inquiries.length },
-    { icon: Users, label: 'Total Contacts', value: userCount },
+    { icon: Users, label: 'Registered Customers', value: userCount },
   ];
 
   return (
@@ -543,9 +560,19 @@ export default function AdminDashboard() {
             {/* Users */}
             {activeTab === 'users' && (
               <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-8">
-                <h2 className="text-2xl font-serif text-amber-900 mb-6">Customer Contacts</h2>
+                <h2 className="text-2xl font-serif text-amber-900 mb-6">Registered Customers</h2>
 
-                {loading ? (
+                {usersError ? (
+                  <div className="text-center py-12">
+                    <p className="text-red-600 text-sm mb-2">{usersError}</p>
+                    <button
+                      onClick={fetchRegisteredUsers}
+                      className="text-amber-900 underline text-sm font-medium hover:text-amber-700"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : usersLoading ? (
                   <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div key={i} className="h-12 bg-amber-100/40 rounded-lg animate-pulse" />
@@ -558,23 +585,35 @@ export default function AdminDashboard() {
                         <tr className="bg-amber-50">
                           <th className="px-4 py-3 text-left text-amber-900 font-semibold text-sm rounded-tl-lg">Name</th>
                           <th className="px-4 py-3 text-left text-amber-900 font-semibold text-sm">Email</th>
-                          <th className="px-4 py-3 text-left text-amber-900 font-semibold text-sm rounded-tr-lg">Inquiries</th>
+                          <th className="px-4 py-3 text-left text-amber-900 font-semibold text-sm">Joined</th>
+                          <th className="px-4 py-3 text-left text-amber-900 font-semibold text-sm">Last Active</th>
+                          <th className="px-4 py-3 text-left text-amber-900 font-semibold text-sm rounded-tr-lg">Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {users.map((u, index) => (
                           <motion.tr
-                            key={index}
+                            key={u.id}
                             className="border-b border-amber-50 hover:bg-amber-50/50 transition-colors"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: index * 0.04 }}
                           >
-                            <td className="px-4 py-3 font-medium text-gray-800 text-sm">{u.name}</td>
+                            <td className="px-4 py-3 font-medium text-gray-800 text-sm">{u.name || '—'}</td>
                             <td className="px-4 py-3 text-gray-500 text-sm">{u.email}</td>
+                            <td className="px-4 py-3 text-gray-500 text-sm">
+                              {new Date(u.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500 text-sm">
+                              {u.last_sign_in_at
+                                ? new Date(u.last_sign_in_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                                : 'Never'}
+                            </td>
                             <td className="px-4 py-3">
-                              <span className="bg-amber-100 text-amber-900 text-xs font-semibold px-2.5 py-1 rounded-full">
-                                {u.inquiry_count}
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                u.confirmed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {u.confirmed ? 'Verified' : 'Pending'}
                               </span>
                             </td>
                           </motion.tr>
@@ -582,7 +621,7 @@ export default function AdminDashboard() {
                       </tbody>
                     </table>
                     {users.length === 0 && (
-                      <div className="text-center py-12 text-gray-400 text-sm">No customer contacts yet</div>
+                      <div className="text-center py-12 text-gray-400 text-sm">No registered customers yet</div>
                     )}
                   </div>
                 )}
