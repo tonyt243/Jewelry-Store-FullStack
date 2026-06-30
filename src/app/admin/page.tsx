@@ -56,6 +56,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingInquiryId, setDeletingInquiryId] = useState<string | null>(null);
+  const [clearingResolved, setClearingResolved] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -138,6 +140,39 @@ export default function AdminDashboard() {
     }
   };
 
+  const deleteInquiry = async (id: string) => {
+    if (!confirm('Delete this inquiry? This cannot be undone.')) return;
+    setDeletingInquiryId(id);
+    try {
+      const { error } = await supabase.from('inquiries').delete().eq('id', id);
+      if (error) throw error;
+      setInquiries(prev => prev.filter(inq => inq.id !== id));
+    } catch (error) {
+      console.error('Error deleting inquiry:', error);
+      alert('Failed to delete inquiry');
+    } finally {
+      setDeletingInquiryId(null);
+    }
+  };
+
+  const clearResolvedInquiries = async () => {
+    const resolvedCount = inquiries.filter(inq => inq.status === 'resolved').length;
+    if (resolvedCount === 0) return;
+    if (!confirm(`Delete all ${resolvedCount} resolved inquiries? This cannot be undone.`)) return;
+
+    setClearingResolved(true);
+    try {
+      const { error } = await supabase.from('inquiries').delete().eq('status', 'resolved');
+      if (error) throw error;
+      setInquiries(prev => prev.filter(inq => inq.status !== 'resolved'));
+    } catch (error) {
+      console.error('Error clearing resolved inquiries:', error);
+      alert('Failed to clear resolved inquiries');
+    } finally {
+      setClearingResolved(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
@@ -179,6 +214,7 @@ export default function AdminDashboard() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-5xl font-serif text-amber-900 mb-2">Admin Dashboard</h1>
+          <p className="text-gray-400 text-sm">Manage products, inquiries, and customer contacts</p>
         </motion.div>
 
         {/* Stats Overview */}
@@ -397,7 +433,29 @@ export default function AdminDashboard() {
             {/* Inquiries */}
             {activeTab === 'inquiries' && (
               <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-8">
-                <h2 className="text-2xl font-serif text-amber-900 mb-6">Customer Inquiries</h2>
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                  <h2 className="text-2xl font-serif text-amber-900">Customer Inquiries</h2>
+                  {!loading && inquiries.some(inq => inq.status === 'resolved') && (
+                    <motion.button
+                      onClick={clearResolvedInquiries}
+                      disabled={clearingResolved}
+                      className="flex items-center gap-2 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {clearingResolved ? (
+                        <motion.div
+                          className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
+                        />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      Clear All Resolved
+                    </motion.button>
+                  )}
+                </div>
 
                 {loading ? (
                   <div className="space-y-4">
@@ -413,45 +471,70 @@ export default function AdminDashboard() {
                   <p className="text-center py-12 text-gray-400 text-sm">No inquiries yet.</p>
                 ) : (
                   <div className="space-y-4">
-                    {inquiries.map((inquiry, i) => (
-                      <motion.div
-                        key={inquiry.id}
-                        className="border border-amber-100 rounded-xl p-6 hover:shadow-sm transition-shadow"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04, duration: 0.4 }}
-                      >
-                        <div className="flex justify-between items-start mb-4 flex-wrap gap-3">
-                          <div>
-                            <h3 className="font-semibold text-amber-900">{inquiry.name}</h3>
-                            <p className="text-gray-400 text-sm">{inquiry.email}</p>
+                    <AnimatePresence mode="popLayout">
+                      {inquiries.map((inquiry, i) => (
+                        <motion.div
+                          key={inquiry.id}
+                          layout
+                          className="border border-amber-100 rounded-xl p-6 hover:shadow-sm transition-shadow"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.96 }}
+                          transition={{ delay: i * 0.04, duration: 0.4 }}
+                        >
+                          <div className="flex justify-between items-start mb-4 flex-wrap gap-3">
+                            <div>
+                              <h3 className="font-semibold text-amber-900">{inquiry.name}</h3>
+                              <p className="text-gray-400 text-sm">{inquiry.email}</p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={inquiry.status}
+                                onChange={(e) => updateInquiryStatus(inquiry.id, e.target.value)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
+                                  inquiry.status === 'new'
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : inquiry.status === 'in_progress'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : 'bg-gray-50 text-gray-600 border-gray-200'
+                                }`}
+                              >
+                                <option value="new">New</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                              </select>
+
+                              <motion.button
+                                onClick={() => deleteInquiry(inquiry.id)}
+                                disabled={deletingInquiryId === inquiry.id}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                aria-label="Delete inquiry"
+                              >
+                                {deletingInquiryId === inquiry.id ? (
+                                  <motion.div
+                                    className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full"
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
+                                  />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </motion.button>
+                            </div>
                           </div>
 
-                          <select
-                            value={inquiry.status}
-                            onChange={(e) => updateInquiryStatus(inquiry.id, e.target.value)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
-                              inquiry.status === 'new'
-                                ? 'bg-green-50 text-green-700 border-green-200'
-                                : inquiry.status === 'in_progress'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : 'bg-gray-50 text-gray-600 border-gray-200'
-                            }`}
-                          >
-                            <option value="new">New</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="resolved">Resolved</option>
-                          </select>
-                        </div>
-
-                        <p className="text-gray-600 text-sm mb-3 leading-relaxed">{inquiry.message}</p>
-                        <p className="text-gray-400 text-xs">
-                          {new Date(inquiry.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })}
-                        </p>
-                      </motion.div>
-                    ))}
+                          <p className="text-gray-600 text-sm mb-3 leading-relaxed">{inquiry.message}</p>
+                          <p className="text-gray-400 text-xs">
+                            {new Date(inquiry.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
