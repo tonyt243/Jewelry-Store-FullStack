@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Package, MessageSquare, Users, Plus, Edit, Trash2, ArrowUpRight } from 'lucide-react';
+import { Package, MessageSquare, Users, Plus, Edit, Trash2, ArrowUpRight, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -58,6 +58,7 @@ export default function AdminDashboard() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState('');
   const [userCount, setUserCount] = useState(0);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -189,6 +190,15 @@ export default function AdminDashboard() {
       setClearingResolved(false);
     }
   };
+
+  // Filter registered users by name or email, case-insensitive
+  const filteredUsers = useMemo(() => {
+    if (!userSearchQuery.trim()) return users;
+    const q = userSearchQuery.toLowerCase();
+    return users.filter(
+      (u) => (u.name?.toLowerCase().includes(q)) || u.email.toLowerCase().includes(q)
+    );
+  }, [users, userSearchQuery]);
 
   if (authLoading) {
     return (
@@ -560,7 +570,36 @@ export default function AdminDashboard() {
             {/* Users */}
             {activeTab === 'users' && (
               <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-8">
-                <h2 className="text-2xl font-serif text-amber-900 mb-6">Registered Customers</h2>
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                  <h2 className="text-2xl font-serif text-amber-900">Registered Customers</h2>
+
+                  {!usersLoading && !usersError && users.length > 0 && (
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-700" />
+                      <input
+                        type="text"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        placeholder="Search by name or email..."
+                        className="w-full pl-10 pr-9 py-2 border border-amber-200 rounded-full text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-amber-900 transition-colors duration-200"
+                      />
+                      <AnimatePresence>
+                        {userSearchQuery && (
+                          <motion.button
+                            onClick={() => setUserSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-amber-900 transition-colors"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            aria-label="Clear search"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
 
                 {usersError ? (
                   <div className="text-center py-12">
@@ -580,6 +619,13 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
+                    {userSearchQuery && (
+                      <p className="text-sm text-gray-400 mb-3">
+                        {filteredUsers.length === 0
+                          ? `No customers match "${userSearchQuery}"`
+                          : `${filteredUsers.length} result${filteredUsers.length !== 1 ? 's' : ''} for "${userSearchQuery}"`}
+                      </p>
+                    )}
                     <table className="w-full">
                       <thead>
                         <tr className="bg-amber-50">
@@ -591,36 +637,40 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {users.map((u, index) => (
-                          <motion.tr
-                            key={u.id}
-                            className="border-b border-amber-50 hover:bg-amber-50/50 transition-colors"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.04 }}
-                          >
-                            <td className="px-4 py-3 font-medium text-gray-800 text-sm">{u.name || '—'}</td>
-                            <td className="px-4 py-3 text-gray-500 text-sm">{u.email}</td>
-                            <td className="px-4 py-3 text-gray-500 text-sm">
-                              {new Date(u.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500 text-sm">
-                              {u.last_sign_in_at
-                                ? new Date(u.last_sign_in_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                                : 'Never'}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                                u.confirmed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                              }`}>
-                                {u.confirmed ? 'Verified' : 'Pending'}
-                              </span>
-                            </td>
-                          </motion.tr>
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                          {filteredUsers.map((u, index) => (
+                            <motion.tr
+                              key={u.id}
+                              layout
+                              className="border-b border-amber-50 hover:bg-amber-50/50 transition-colors"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ delay: index * 0.03 }}
+                            >
+                              <td className="px-4 py-3 font-medium text-gray-800 text-sm">{u.name || '—'}</td>
+                              <td className="px-4 py-3 text-gray-500 text-sm">{u.email}</td>
+                              <td className="px-4 py-3 text-gray-500 text-sm">
+                                {new Date(u.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 text-sm">
+                                {u.last_sign_in_at
+                                  ? new Date(u.last_sign_in_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                                  : 'Never'}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                                  u.confirmed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {u.confirmed ? 'Verified' : 'Pending'}
+                                </span>
+                              </td>
+                            </motion.tr>
+                          ))}
+                        </AnimatePresence>
                       </tbody>
                     </table>
-                    {users.length === 0 && (
+                    {filteredUsers.length === 0 && !userSearchQuery && (
                       <div className="text-center py-12 text-gray-400 text-sm">No registered customers yet</div>
                     )}
                   </div>
