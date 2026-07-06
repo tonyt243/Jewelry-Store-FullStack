@@ -1,167 +1,181 @@
-# Kim Thao Trang Jewelry - Full Stack Web Application
+<p align="center">
+  <img src="public/images/logotest.png" alt="Kim Thao Trang Jewelry" width="300" />
+</p>
 
-##  Project Overview
+# Kim Thao Trang Jewelry
 
-This is a complete redesign and upgrade of the Kim Thao Trang Jewelry store website, transforming it from a static HTML/CSS site into a dynamic full-stack application with user authentication, admin dashboard, and database integration.
+A full-stack e-commerce web application for a fine jewelry store in Hồ Chí Minh City, Vietnam. Built as a complete rebuild from a static HTML/CSS site into a modern, animated, production-ready Next.js application.
 
-##  Features
+**Live Demo → [kimthaotrang.vercel.app](https://kimthaotrang.vercel.app)**
 
-### Customer Features
--  **User Authentication System**
--  **Product Gallery**
--  **Favorites System**
--  **Contact System**
--  **Additional Pages**
-  
+---
 
-### Admin Features
--  **Admin Dashboard** (Protected Route)
--  **Product Management**
--  **Inquiry Management**
--  **User Management**
+## Screenshots
 
+> _Add screenshots here — homepage, products page, admin dashboard, mobile view_
 
-### UI/UX Features
--  **Modern Design**
--  **Interactive Elements**
-  
+---
+
+## Features
+
+### Customer-Facing
+- **Product Gallery** — filterable by category (rings, necklaces, bracelets, earrings), sortable by price, with real-time search by name or description
+- **Product Lightbox** — click any product image to open a full-screen modal with details, pricing, and inquiry CTA
+- **Favorites System** — save products with an animated heart toggle, persisted to Supabase per user
+- **Contact Form** — inquiry form with rate limiting, phone number validation, and optional product pre-fill from the products page
+- **FAQ Chatbot** — floating chat widget with clickable + typeable questions, keyword matching, and fallback to contact page
+- **User Auth** — email/password registration with real-time password strength meter and requirement checklist
+
+### Admin Dashboard (Protected Route)
+- **Products** — full CRUD with skeleton loading, animated row removal
+- **Inquiries** — status management (New / In Progress / Resolved), per-inquiry delete, bulk "Clear All Resolved"
+- **Users** — real registered accounts pulled from Supabase Auth via a secure server-side API route, searchable by name or email, showing join date, last active, and verification status
+
+### UI/UX
+- **Framer Motion animations** throughout — scroll-triggered reveals, staggered card entrances, page transitions, skeleton loaders, spring interactions
+- **Scroll-zoom sections** on About and Services pages using `useScroll` + `useTransform`
+- **Animated marquee banner** — pure CSS, no extra library
+- **Count-up stats** with scramble/slot-machine effect on the About page
+- **Staggered letter reveal** on section headings
+- **Active nav indicator** that slides between links using Framer Motion `layoutId`
+- **Back to top button** — springs in after 400px scroll
+- **Custom 404 page** with floating animation
+- Fully responsive — mobile sidebar navigation with spring animations
+
+---
 
 ## Tech Stack
 
-### Frontend
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Fonts**: Google Fonts (Playfair Display, Cormorant Garamond)
-- **UI Components**: Custom components with Lucide React icons
-- **Image Carousel**: Embla Carousel React
-- **Analytics**: Vercel Analytics
-- **Deployment**: Vercel
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Animations | Framer Motion |
+| Icons | Lucide React |
+| Database | Supabase (PostgreSQL) |
+| Auth | Supabase Auth |
+| API Routes | Next.js Route Handlers |
+| Fonts | Playfair Display, Cormorant Garamond |
+| Carousel | Embla Carousel |
+| Analytics | Vercel Analytics |
+| Deployment | Vercel |
 
-### Backend
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth (Email/Password)
-- **API**: Next.js API Routes (built-in)
-- **File Storage**: Public folder for static assets
-- **Security**: Row Level Security (RLS) policies
+---
 
-### Development Tools
-- **Package Manager**: npm
-- **Version Control**: Git & GitHub
-- **Code Editor**: VS Code (recommended)
-- **Node Version**: 18+ required
+## Architecture Highlights
 
-##  Project Structure
+**Secure admin user management** — The Users tab in the admin dashboard queries Supabase `auth.users` (normally inaccessible client-side) via a Next.js API route that uses the service role key server-side, validates the requester's session token, and confirms admin status before returning any data. The service role key never reaches the browser.
+
+**Rate limiting** — Contact form and auth routes use server-side rate limiting to prevent abuse.
+
+**Row Level Security** — All Supabase tables have RLS policies ensuring users can only access their own data.
+
+---
+
+## Project Structure
+
 ```
 jewelry-store-fs/
 ├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── about/             # About Us page
-│   │   ├── admin/             # Admin dashboard
-│   │   │   └── products/
-│   │   │       └── edit/[id]/ # Edit product page
-│   │   ├── contact/           # Contact page with map
-│   │   ├── favorites/         # User favorites page
-│   │   ├── login/             # Login page
-│   │   ├── products/          # Products gallery
-│   │   ├── register/          # Registration page
-│   │   ├── services/          # Services page
-│   │   ├── layout.tsx         # Root layout with AuthProvider
-│   │   ├── page.tsx           # Homepage with carousel
-│   │   └── globals.css        # Global styles
-│   ├── components/            # React components
-│   │   ├── Navbar.tsx         # Navigation with auth & clock
-│   │   ├── Footer.tsx         # Footer with store info
-│   │   └── Carousel.tsx       # Auto-playing image carousel
-│   ├── context/               # React Context
-│   │   └── AuthContext.tsx    # Authentication & admin state
-│   └── lib/                   # Utilities
-│       └── supabase.ts        # Supabase client configuration
-├── public/
-│   └── images/                # Static images (logo, products, carousel)
-├── .env.example               # Environment variables template
+│   ├── app/
+│   │   ├── about/             # About page with scroll-zoom + scramble stats
+│   │   ├── admin/             # Admin dashboard (products / inquiries / users)
+│   │   │   └── products/edit/ # Edit product page
+│   │   ├── api/
+│   │   │   ├── admin/users/   # Secure server-side user fetch (service role)
+│   │   │   ├── auth/          # Rate-limited auth endpoints
+│   │   │   └── contact/       # Rate-limited contact form endpoint
+│   │   ├── contact/           # Contact form + Google Maps embed
+│   │   ├── favorites/         # Favorites page with lightbox
+│   │   ├── login/             # Login with animated inputs
+│   │   ├── products/          # Product gallery with search + lightbox
+│   │   ├── register/          # Register with password strength meter
+│   │   ├── services/          # Services with alternating scroll-slide layout
+│   │   ├── not-found.tsx      # Custom 404 page
+│   │   ├── layout.tsx         # Root layout
+│   │   └── page.tsx           # Homepage with marquee + category grid
+│   ├── components/
+│   │   ├── Navbar.tsx         # Sticky nav with active link indicator + clock
+│   │   ├── Footer.tsx         # Footer matching site palette
+│   │   ├── Carousel.tsx       # Auto-playing image carousel
+│   │   ├── PageTransition.tsx # Framer Motion page fade wrapper
+│   │   ├── BackToTop.tsx      # Spring-animated scroll-to-top button
+│   │   └── FaqChatbot.tsx     # Floating FAQ chat widget
+│   ├── context/
+│   │   └── AuthContext.tsx    # Auth state + isAdmin check
+│   └── lib/
+│       └── supabase.ts        # Supabase client
+├── public/images/             # Static assets
+├── .env.example               # Environment variable template
 ├── supabase-setup.sql         # Database setup script
-├── LICENSE                    # MIT License
-├── README.md                  # Project documentation
-├── package.json               # Dependencies
-├── tailwind.config.ts         # Tailwind configuration
-└── tsconfig.json              # TypeScript configuration
+├── tailwind.config.ts
+└── tsconfig.json
 ```
 
-##  Getting Started
+---
+
+## Getting Started
 
 ### Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
+- Node.js 18+
+- npm
 - Supabase account (free tier)
-- Git installed
 
 ### Installation
 
-1. **Clone the repository**
 ```bash
-   git clone https://github.com/tonyt243/Jewelry-Store-FullStack.git
-   cd Jewelry-Store-FullStack
+# 1. Clone the repo
+git clone https://github.com/tonyt243/Jewelry-Store-FullStack.git
+cd Jewelry-Store-FullStack
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment variables
+cp .env.example .env.local
 ```
 
-2. **Install dependencies**
-```bash
-   npm install
-```
+Edit `.env.local`:
 
-3. **Set up environment variables**
-   
-   Create a `.env.local` file in the root directory (use `.env.example` as template):
 ```env
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   NEXT_PUBLIC_ADMIN_EMAIL=your-admin-email@example.com
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+NEXT_PUBLIC_ADMIN_EMAIL=your-admin-email@example.com
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-4. **Set up Supabase Database**
-   
-   Run the database setup script:
-   
-   a. Open your Supabase project dashboard
-   
-   b. Go to **SQL Editor**
-   
-   c. Click **"New Query"**
-   
-   d. Copy the entire contents of [`supabase-setup.sql`](./supabase-setup.sql)
-   
-   e. **IMPORTANT**: Replace all instances of `'your-admin-email@example.com'` with your actual admin email
-   
-   f. Click **"Run"** or press `Ctrl+Enter`
-   
-   g. Wait for success message: "Success. No rows returned"
+>**Never commit `.env.local`** — it's gitignored by default. The `SUPABASE_SERVICE_ROLE_KEY` bypasses Row Level Security and must stay server-side only.
 
-5. **Configure Supabase Authentication**
-   
-   a. Go to **Authentication** → **Providers**
-   
-   b. Enable **Email** provider
-   
-   c. Disable **"Confirm email"** (for development)
-   
-   d. Click **Save**
-
-6. **Run the development server**
 ```bash
-   npm run dev
+# 4. Set up the database
+# Open Supabase → SQL Editor → paste supabase-setup.sql → Run
+
+# 5. Start the dev server
+npm run dev
 ```
 
-7. **Open your browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000).
 
-8. **Create admin account**
-   
-   a. Click **"Login"** → **"Create one here"**
-   
-   b. Register with the email you set as `NEXT_PUBLIC_ADMIN_EMAIL`
-   
-   c. You'll now have access to the **Admin Dashboard** via the navbar
+To access the admin dashboard, register an account using the email you set as `NEXT_PUBLIC_ADMIN_EMAIL`.
 
+---
 
+## Environment Variables
+
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (public) |
+| `NEXT_PUBLIC_ADMIN_EMAIL` | Email address that gets admin access |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — server-side only, never expose publicly |
+
+---
+
+## Author
+
+Built by **Huy Ta** — [github.com/tonyt243](https://github.com/tonyt243)
+
+---
+
+## License
+
+MIT
