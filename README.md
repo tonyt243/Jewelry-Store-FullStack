@@ -10,12 +10,6 @@ A full-stack e-commerce web application for a fine jewelry store in Hồ Chí Mi
 
 ---
 
-## Screenshots
-
-> _Add screenshots here — homepage, products page, admin dashboard, mobile view_
-
----
-
 ## Features
 
 ### Customer-Facing
@@ -163,6 +157,8 @@ To access the admin dashboard, register an account using the email you set as `N
 
 ## Environment Variables
 
+| Variable | Description |
+|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (public) |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | Email address that gets admin access |
